@@ -1,0 +1,79 @@
+#!/bin/sh
+#
+# Query raid state in /proc/mdstat and set red led lamps as needed.
+#
+# This is only useful on the NetDISK Power 400T from IOCELL Networks if you
+# change the operating system to a full fledged Linux based distro.
+# Possibly helpful on the BIOSTAR I94GC-I7 motherboard.
+# Unfortunately, it only affects the entire set of lamps.
+# It will not distinguish between devices, but cause them all to 
+# blink if any issue is detected.
+#
+# Copyright (C) 2016 https://github.com/dansdrivers
+# Distributable under the terms of the GNU GPL version 2.
+#
+### BEGIN INIT INFO
+#
+# Provides:			mdstatled
+# Required-Start:	$local_fs $syslog
+# Required-Stop:	$syslog
+# Default-Start:	2 3 4 5
+# Default-Stop:	0 1 6
+# Short-Description:	Start 400T red led monitor
+# Description:		The mdstatled script queries raid status(s) by examining
+#			/proc/mdstat and sets the red led lamps to steady on
+#			(degraded), blinking (recovering) or off as needed.
+#
+# Revision: 0.0.0.1
+### END INIT INFO
+#
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+
+case "${1:-}" in
+	stop)
+		#-----------------------------------------------------------------
+		# Stop the mdstatled monitoring processes if it exists.
+		#
+		/bin/mdstatled stop
+	;;
+		
+	status)
+		#-----------------------------------------------------------------
+		# Report process id of a running mdstatled monitoring processes.
+		#
+		/bin/mdstatled status
+	;;
+
+	monitoring)
+		#-----------------------------------------------------------------
+		# Check /proc/mdstat and control the red leds based on the result.
+		#
+		nohup /bin/mdstatled monitoring >/dev/null 2>&1 &
+	;;
+
+	start)
+		#-----------------------------------------------------------------
+		# Hacked to make the appearance in ps output more meaningful.
+		#
+		/bin/mdstatled stop
+		nohup /bin/mdstatled monitoring >/dev/null 2>&1 &
+	;;
+
+	*)
+		echo "Usage : mdstatledcontrol [start|stop|monitoring|status]"
+		echo
+		echo "Commands :"
+		echo "  monitoring Check /proc/mdstat and control the red leds based on"
+		echo "             the result."
+		echo "  start      Stops any instance and starts mdstatled in monitoring"
+		echo "             mode"
+		echo "  status     Report process id of a running mdstatled monitoring"
+		echo "             processes."
+		echo "  stop       Stop the mdstatled monitoring processes if it exists."
+		exit 1
+	;;
+esac
+
+exit 0

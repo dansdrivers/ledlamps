@@ -1,0 +1,58 @@
+#!/bin/sh
+#
+# Set the red led lamps as needed.
+#
+# This is only useful on the NetDISK Power 400T from IOCELL Networks if you
+# change the operating system to a full fledged Linux based distro.
+# Possibly helpful on the BIOSTAR I94GC-I7 motherboard.
+# Unfortunately, it only affects the entire set of lamps.
+# It will not distinguish between devices, but cause them all to 
+# blink if any issue is detected.
+#
+# Copyright (C) 2016 https://github.com/dansdrivers
+# Distributable under the terms of the GNU GPL version 2.
+#
+# Description: red led controller
+#
+# Revision: 0.0.0.1
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+
+if [ $# -ne 1 ]; then
+    echo "Usage : hddled [on|off|blink]"
+    exit 1
+fi
+
+setledps=`ps -aef | grep "setled" |wc -l`
+if [ $setledps -gt 0 ]; then 
+    killall -9 setled  > /dev/null 2>&1
+fi
+
+#----------------------------------------------------------------- 
+hddled_red_control()
+{
+    LED_CONTROL=$1
+    case  $LED_CONTROL in
+     "ON" | "on")
+      setled -n;;
+     "OFF" | "off")
+      setled -f;;
+     "BLINK" | "blink")
+      setled -b;;
+      *)
+      setled -f;;
+    esac
+    exit 0
+}
+#----------------------------------------------------------------- 
+
+#----------------------------------------------------------------- 
+# HDD RED LED Control 
+#----------------------------------------------------------------- 
+setledps=`ps axwww | grep "setled" | wc -l`
+if [ $setledps -ge 0 ]; then
+    hddled_red_control "$1" &
+fi
+
+exit 0

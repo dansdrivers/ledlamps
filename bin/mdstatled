@@ -1,0 +1,175 @@
+#!/bin/sh
+#
+# Query raid state in /proc/mdstat and set red led lamps as needed.
+#
+# This is only useful on the NetDISK Power 400T from IOCELL Networks if you
+# change the operating system to a full fledged Linux based distro.
+# Possibly helpful on the BIOSTAR I94GC-I7 motherboard.
+# Unfortunately, it only affects the entire set of lamps.
+# It will not distinguish between devices, but cause them all to 
+# blink if any issue is detected.
+#
+# Copyright (C) 2016 https://github.com/dansdrivers
+# Distributable under the terms of the GNU GPL version 2.
+#
+### BEGIN INIT INFO
+#
+# Provides:				mdstatled
+# Required-Start:		$local_fs $syslog
+# Required-Stop:		$syslog
+# Default-Start:		2 3 4 5
+# Default-Stop:		0 1 6
+# Short-Description:	Control red leds on 400T
+# Description:			This script queries the raid state by examining the
+#                    /proc/mdstat file and sets the red led lamps to steady
+#                    on (degraded), blinking (recovering) or off as needed.
+#
+# Revision: 0.0.0.1
+### END INIT INFO
+#
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+MDSTATLEDLOG=/tmp/mdstatlog
+export MDSTATLEDLOG
+
+#-----------------------------------------------------------------
+# stop any existing setled process
+#
+kill_setled()
+{
+	setledps=`ps -aef | grep "setled" |wc -l`
+	if [ $setledps -gt 0 ]; then
+		killall -9 setled > /dev/null 2>&1
+	fi
+}
+
+#-----------------------------------------------------------------
+# find the system logger
+#
+write_to_syslog()
+{
+	LOGTOOL=$(which logger)
+	if [ "$LOGTOOL" = "" ]; then
+		DATE=$(date +'%b %d %T')
+		HOST=$(hostname)
+		USER=$(whoami)
+		if [ -f /var/log/syslog ]; then
+			LOGFILE=/var/log/syslog
+		else
+			if [ -f /var/log/messages ]; then
+				LOGFILE=/var/log/messages
+			fi
+		fi
+		while read LINE; do
+			echo "$DATE $HOST $USER: $LINE" >> $LOGFILE
+		done < $MDSTATLEDLOG
+	else
+		while read LINE; do
+			$LOGTOOL "$LINE"
+		done < $MDSTATLEDLOG
+	fi
+	rm $MDSTATLEDLOG
+}
+
+#----------------------------------------------------------------
+# send commands to setled
+#
+red_led_control()
+{
+	 LED_STATE=$1
+	 case $LED_STATE in
+		"ON" | "on")
+			setled -n;;
+		"OFF" | "off")
+			setled -f;;
+		"BLINK" | "blink")
+			setled -b;;
+		*)
+			setled -f;;
+	 esac
+}
+
+case "${1:-}" in
+	stop)
+		#-----------------------------------------------------------------
+		# Stop the mdstatled monitoring processes if it exists commanded
+		#
+		MDSTATLEDPD=$(ps aux | grep "mdstatled monitoring" | grep -v "grep" | wc -l )
+		if [ $MDSTATLEDPD -gt 0 ]; then
+			MDSTATLEDPD=$(ps aux | grep "mdstatled monitoring" | grep -v "grep" | awk '{print $2}')
+			kill -9 $MDSTATLEDPD
+		fi
+	;;
+		
+	status)
+		#-----------------------------------------------------------------
+		# Report process id of a running mdstatled monitoring processes.
+		#
+		MDSTATLEDPD=$(ps aux | grep "mdstatled monitoring" | grep -v "grep" | wc -l )
+		if [ $MDSTATLEDPD -gt 0 ]; then
+			echo "mdstatled is running:"
+			ps aux | grep "mdstatled" | grep -v "status" | grep -v "grep" 
+		else
+			echo "no mdstatled monitor process could be found."
+		fi
+	;;
+
+	monitoring)
+		#-----------------------------------------------------------------
+		# Check /proc/mdstat and control the red leds based on the result.
+		#
+		while true; do
+			if [ -e /bin/setled ]; then
+				kill_setled
+				SETLAMP=off
+				red_led_control "$SETLAMP" &
+		
+				if [ -f /proc/mdstat ]; then
+					mdchk1=`cat /proc/mdstat | grep "recovery" | wc -l`
+					if [ $mdchk1 -gt 0 ]; then
+						echo "mdstatled found raid recovery in progress." > $MDSTATLEDLOG
+						write_to_syslog
+						cat /proc/mdstat | grep -B 2 recovery > $MDSTATLEDLOG
+						write_to_syslog
+						SETLAMP="blink"
+					fi
+
+					mdchk2=`cat /proc/mdstat | grep "_" | wc -l`
+					if [ $mdchk2 -gt 0 ]; then
+						echo "mdstatled found a degraded raid." > $MDSTATLEDLOG
+						write_to_syslog
+						cat /proc/mdstat | grep -B 1 "_" > $MDSTATLEDLOG
+						write_to_syslog
+						SETLAMP="on"
+					fi
+				fi
+		
+				if [ "$SETLAMP" != "off" ]; then
+					red_led_control "$SETLAMP" &
+				fi
+			else
+				echo "mdstatled did not find /bin/setled. cannot warn of disk or raid errors." > $MDSTATLEDLOG
+				write_to_syslog
+			fi
+			sleep 30
+		
+		done
+	;;
+
+	start)
+		#-----------------------------------------------------------------
+		# Hacked to make the appearance in ps output more meaningful.
+		#
+		${0:-} stop
+		${0:-} monitoring &
+		disown -h
+	;;
+
+	*)
+		echo "Usage : mdstatled [start|stop|monitoring|status]"
+		exit 1
+	;;
+esac
+
+exit 0

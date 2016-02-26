@@ -1,0 +1,68 @@
+#! /bin/sh
+#
+# Sets the red led state as needed on booting.
+#
+# This is only useful on the NetDISK Power 400T from IOCELL Networks if you
+# change the operating system to a full fledged Linux based distro.
+# Possibly helpful on the BIOSTAR I94GC-I7 motherboard.
+# Unfortunately, it only affects the entire set of lamps.
+# It will not distinguish between devices, but cause them all to 
+# blink if any issue is detected.
+#
+# Copyright (C) 2016 https://github.com/dansdrivers
+# Distributable under the terms of the GNU GPL version 2.
+#
+#### BEGIN INIT INFO
+# Provides:		 redledcontrol
+# Required-Start:	$all
+# Required-Stop:
+# Default-Start:	 2 3 4 5
+# Default-Stop:
+# Short-Description: Control the red led disk lamps as needed
+### END INIT INFO
+
+
+PATH=/bin
+
+do_start() {
+	if [ -f /bin/hddled ]; then
+		# setled off
+		echo -n "Red disk leds off until needed: "
+		/bin/hddled off > /dev/null 2>&1
+		echo
+	fi
+}
+
+case "$1" in
+	start)
+		do_start
+		;;
+	restart|reload|force-reload)
+		echo "Error: argument '$1' not supported" >&2
+		exit 1
+		;;
+	stop)
+		setledps=`ps -aef | grep "setled" |wc -l`
+		if [ $setledps -gt 0 ]; then 
+			echo "Killing setled ps ($hddledps)"
+			killall -9 setled > /dev/null 2>&1
+		else
+			echo "Nothing to stop. No setled ps found."		
+		fi
+		exit 0
+		;;
+	status)
+		setledps=`ps -aef | grep "setled" |wc -l`
+		if [ $setledps -gt 0 ]; then 
+			echo `ps -aef | grep "setled" `
+		else
+			echo "No setled process found."		
+		fi
+		exit 0
+		;;
+	*)
+		echo "Usage: $0 start|stop|status" >&2
+		exit 2
+		;;
+esac
+
