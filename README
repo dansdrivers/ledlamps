@@ -7,16 +7,16 @@ apt-get install ia32-libs
 
 Debian 8
 apt-get install lib32z1 
-sudo cp led_lamps/bin/setled /bin
+sudo cp ledlamps/bin/setled /bin
 sudo chmod +x /bin/setled
-sudo cp led_lamps/bin/hddled /bin
+sudo cp ledlamps/bin/hddled /bin
 sudo chmod +x /bin/hddled
-sudo cp led_lamps/etc/init.d/redledcontrol /etc/init.d
+sudo cp ledlamps/etc/init.d/redledcontrol /etc/init.d
 sudo chmod +x /etc/init.d/redledcontrol
 sudo update-rc.d redledcontrol defaults
-sudo cp led_lamps/bin/mdstatled /bin
+sudo cp ledlamps/bin/mdstatled /bin
 sudo chmod +x /bin/mdstatled
-sudo cp led_lamps/etc/init.d/mdstatledcontrol /etc/init.d
+sudo cp ledlamps/etc/init.d/mdstatledcontrol /etc/init.d
 sudo chmod +x /etc/init.d/mdstatledcontrol
 sudo update-rc.d mdstatledcontrol defaults
 
