@@ -6,21 +6,21 @@
 # change the operating system to a full fledged Linux based distro.
 # Possibly helpful on the BIOSTAR I94GC-I7 motherboard.
 # Unfortunately, it only affects the entire set of lamps.
-# It will not distinguish between devices, but cause them all to 
-# blink if any issue is detected.
+# It will not distinguish between devices, but cause them all to blink if any
+# issue is detected.
 #
 # Copyright (C) 2016 https://github.com/dansdrivers
 # Distributable under the terms of the GNU GPL version 2.
 #
 ### BEGIN INIT INFO
 #
-# Provides:				mdstatled
-# Required-Start:		$local_fs $syslog
-# Required-Stop:		$syslog
-# Default-Start:		2 3 4 5
-# Default-Stop:		0 1 6
-# Short-Description:	Control red leds on 400T
-# Description:			This script queries the raid state by examining the
+# Provides:          mdstatled
+# Required-Start:    $local_fs $syslog
+# Required-Stop:     $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Control red leds on 400T
+# Description:       This script queries the raid state by examining the
 #                    /proc/mdstat file and sets the red led lamps to steady
 #                    on (degraded), blinking (recovering) or off as needed.
 #
@@ -101,7 +101,7 @@ case "${1:-}" in
 			kill -9 $MDSTATLEDPD
 		fi
 	;;
-		
+
 	status)
 		#-----------------------------------------------------------------
 		# Report process id of a running mdstatled monitoring processes.
@@ -124,17 +124,8 @@ case "${1:-}" in
 				kill_setled
 				SETLAMP=off
 				red_led_control "$SETLAMP" &
-		
-				if [ -f /proc/mdstat ]; then
-					mdchk1=`cat /proc/mdstat | grep "recovery" | wc -l`
-					if [ $mdchk1 -gt 0 ]; then
-						echo "mdstatled found raid recovery in progress." > $MDSTATLEDLOG
-						write_to_syslog
-						cat /proc/mdstat | grep -B 2 recovery > $MDSTATLEDLOG
-						write_to_syslog
-						SETLAMP="blink"
-					fi
 
+				if [ -f /proc/mdstat ]; then
 					mdchk2=`cat /proc/mdstat | grep "_" | wc -l`
 					if [ $mdchk2 -gt 0 ]; then
 						echo "mdstatled found a degraded raid." > $MDSTATLEDLOG
@@ -142,18 +133,38 @@ case "${1:-}" in
 						cat /proc/mdstat | grep -B 1 "_" > $MDSTATLEDLOG
 						write_to_syslog
 						SETLAMP="on"
+						red_led_control "$SETLAMP" &
+						sleep 5
+						red_led_control "off" &
+						sleep 2
+						red_led_control "$SETLAMP" &
+						sleep 5
+						red_led_control "$off" &
+						sleep 2
+						red_led_control "$SETLAMP" &
+						sleep 5
+						red_led_control "$off" &
+						sleep 2
 					fi
-				fi
-		
-				if [ "$SETLAMP" != "off" ]; then
-					red_led_control "$SETLAMP" &
+				
+					mdchk1=`cat /proc/mdstat | grep "recovery" | wc -l`
+					if [ $mdchk1 -gt 0 ]; then
+						echo "mdstatled found raid recovery in progress." > $MD$
+						write_to_syslog
+						cat /proc/mdstat | grep -B 2 recovery > $MDSTATLEDLOG
+						write_to_syslog
+						SETLAMP="blink"
+						red_led_control "$SETLAMP" &
+						sleep 15
+						red_led_control "$off" &
+					fi
+				
 				fi
 			else
 				echo "mdstatled did not find /bin/setled. cannot warn of disk or raid errors." > $MDSTATLEDLOG
 				write_to_syslog
 			fi
 			sleep 30
-		
 		done
 	;;
 
@@ -167,7 +178,16 @@ case "${1:-}" in
 	;;
 
 	*)
-		echo "Usage : mdstatled [start|stop|monitoring|status]"
+		echo "Usage : mdstatledcontrol [start|stop|monitoring|status]"
+		echo
+		echo "Commands :"
+		echo "  monitoring Check /proc/mdstat and control the red leds based on"
+		echo "             the result."
+		echo "  start      Stops any instance and starts mdstatled in monitoring"
+		echo "             mode"
+		echo "  status     Report process id of a running mdstatled monitoring"
+		echo "             processes."
+		echo "  stop       Stop the mdstatled monitoring processes if it exists."
 		exit 1
 	;;
 esac
