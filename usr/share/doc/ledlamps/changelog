@@ -1,0 +1,7 @@
+ledlamps (0.0.1); urgency=medium
+
+  * Works on Debian
+    - Only accounts for recovering raid and degraded states
+
+ -- Dans Drivers <dansdrivers@github>  Sat, 27 Feb 2016 17:51:26 +0300
+

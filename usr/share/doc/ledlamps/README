@@ -1,0 +1,41 @@
+These scripts may only useful on the NetDISK Power 400T from IOCELL Networks if
+you change the operating system to a full fledged Linux based distro.
+They might possibly be helpful on a system with BIOSTAR I94GC-I7 motherboard.
+Unfortunately, they only affects the entire set of lamps.
+It will not distinguish between devices, but cause them all to 
+blink if any issue is detected.
+
+Copyright (C) 2016 https://github.com/dansdrivers
+Distributable under the terms of the GNU GPL version 2.
+
+The scripts and setled binary perform the following functions:
+
+* Turn off the red led lamps when the system is booted.
+* Alert by blinking for 15 seconds if a raid is recovering.
+* Alert by turning on for 5 seconds three times if a raid is degraded.
+ 
+Prequisites seem to be only the proper 32 bit libraries for setled.
+
+If using 64Bit distro, something like below may get them installed.
+RPM based distribution (CentOS/RedHat/Fedora/Suse/Mandriva):
+yum -y install glibc.i686
+
+DEB based distribution (Debian/Ubuntu/Mint):
+apt-get update
+apt-get install lib32z1
+
+Script installation:
+Debian 8
+apt-get install lib32z1 
+sudo cp ledlamps/bin/setled /bin
+sudo chmod +x /bin/setled
+sudo cp ledlamps/bin/hddled /bin
+sudo chmod +x /bin/hddled
+sudo cp ledlamps/etc/init.d/redledcontrol /etc/init.d
+sudo chmod +x /etc/init.d/redledcontrol
+sudo update-rc.d redledcontrol defaults
+sudo cp ledlamps/bin/mdstatled /bin
+sudo chmod +x /bin/mdstatled
+sudo cp ledlamps/etc/init.d/mdstatledcontrol /etc/init.d
+sudo chmod +x /etc/init.d/mdstatledcontrol
+sudo update-rc.d mdstatledcontrol defaults
