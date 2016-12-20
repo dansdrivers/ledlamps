@@ -20,22 +20,35 @@ If using 64Bit distro, something like below may get them installed.
 RPM based distribution (CentOS/RedHat/Fedora/Suse/Mandriva):
 yum -y install glibc.i686
 
-DEB based distribution (Debian/Ubuntu/Mint):
+# Get controller and library on .DEB based distribution (Debian/Ubuntu/Mint):
+# Do following after or try copy to pasty
+#
+ssh root@ur.ipa.ddr.ess
+#
 apt-get update
 apt-get install lib32z1
-
-Script installation:
-Debian 8
-apt-get install lib32z1 
-sudo cp ledlamps/bin/setled /bin
-sudo chmod +x /bin/setled
-sudo cp ledlamps/bin/hddled /bin
-sudo chmod +x /bin/hddled
-sudo cp ledlamps/etc/init.d/redledcontrol /etc/init.d
-sudo chmod +x /etc/init.d/redledcontrol
-sudo update-rc.d redledcontrol defaults
-sudo cp ledlamps/bin/mdstatled /bin
-sudo chmod +x /bin/mdstatled
-sudo cp ledlamps/etc/init.d/mdstatledcontrol /etc/init.d
-sudo chmod +x /etc/init.d/mdstatledcontrol
-sudo update-rc.d mdstatledcontrol defaults
+wget https://github.com/dansdrivers/ledlamps-master/archive/master.zip -O led_lamps.zip
+unzip led_lamps.zip 
+#
+# Script installation:
+# Debian 8
+#
+cp ledlamps-master/bin/setled /bin
+chmod +x /bin/setled
+cp ledlamps-master/bin/hddled /bin
+chmod +x /bin/hddled
+cp ledlamps-master/etc/init.d/redledcontrol /etc/init.d
+chmod +x /etc/init.d/redledcontrol
+update-rc.d redledcontrol defaults
+cp ledlamps-master/bin/mdstatled /bin
+chmod +x /bin/mdstatled
+cp ledlamps-master/etc/init.d/mdstatledcontrol /etc/init.d
+chmod +x /etc/init.d/mdstatledcontrol
+update-rc.d mdstatledcontrol defaults
+ 
+# testing
+hddled off
+sleep 10
+hddled blink
+sleep 10
+hddled on
